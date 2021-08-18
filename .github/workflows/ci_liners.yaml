@@ -1,0 +1,52 @@
+name: ci_linters
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+  RUSTFLAGS: -D warnings
+
+jobs:
+  ci_liners:
+    name: ci_liners
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04,macos-10.15]
+      fail-fast: true
+      max-parallel: 10
+    env:
+      ImageOS:  ${{ matrix.os }}
+      BUILD_BUILDID: ${{ github.event.ref }}
+    steps: 
+      - uses: actions/checkout@v2
+      - name: Linters
+        run: |
+          echo "liners test"
+
+  check_runs:
+    if: ${{ always() }}
+    name: check_runs
+    runs-on: ubuntu-20.04
+    needs: ci_liners
+    steps: 
+    - uses: actions/checkout@v2
+    - name: install python requirements
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - run: |
+        pip install requests
+        pip install datetime
+        pip install python-dotenv
+    - name: Do check suite 
+      id: check_suit
+      run: |
+        python3 ${{ github.workspace }}/devtools/ci/check_runs.py ${{ github.sha }} ${{secrets.WORKFLOW_TOKEN}} > result.log
+        cat result.log
+    env:
+      workspace: ${{ github.workspace }}
