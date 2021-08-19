@@ -2,14 +2,13 @@ name: ci_dispatch
 
 on:
   workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Reason to pass CI'
-        required: true
-      conclusion:
-        description: 'CI conclusion, allowed values: success or failure'
-        required: true
-      
+    # inputs:
+    #   reason:
+    #     description: 'Reason to pass CI'
+    #     required: true
+    #   conclusion:
+    #     description: 'CI conclusion, allowed values: success or failure'
+    #     required: true
 
 jobs:
   create_commit_status:
