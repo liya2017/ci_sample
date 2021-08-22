@@ -22,8 +22,8 @@ env:
   EVENT_NAME: ${{github.event_name}}
   REPOSITPRY: ${{ github.repository }}
   TOKEN: ${{secrets.WORKFLOW_TOKEN}}
-  COMMIT_SHA: ${{ github.sha }}
-
+  COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  workspace: ${{ github.workspace }}
 jobs:
   prologue:
     name: prologue
@@ -35,17 +35,21 @@ jobs:
       - name: set-output
         id: set-matrix 
         run: |
-          runs_on=`${{github.workspace}}/devtools/ci/set_runs_on.sh`
+          runs_on=`${{github.workspace}}/devtools/ci/ci_prologue.sh`
           echo $runs_on
           echo "::set-output name=matrix::{\"os\":$runs_on}"
-  main:
-    name: main
+  ci_liners:
+    name: ci_liners
     needs: prologue
     runs-on: ${{ matrix.os }}
     strategy:
-      matrix: ${{fromJSON(needs.set-runs-on.outputs.matrix)}} 
+      matrix: ${{fromJSON(needs.prologue.outputs.matrix)}} 
     steps:
-    - run: echo  ${{fromJSON(needs.set-runs-on.outputs.matrix)}}
+    - uses: actions/checkout@v2
+    - run: echo  ${{fromJSON(needs.prologue.outputs.matrix)}}
+    - run: |
+        ls ${{github.workspace}}/devtools/ci
+        ${{github.workspace}}/devtools/ci/ci_main.sh
     - name: install python requirements
       uses: actions/setup-python@v2
       with:
@@ -55,8 +59,27 @@ jobs:
         pip install datetime
         pip install python-dotenv
         pip install PyGithub
-        python3 ${{ github.workspace }}/devtools/ci/check_runs.py ${{ github.sha }} ${{secrets.WORKFLOW_TOKEN}} > result.log
+    - name: ci_epilogue
+      id: ci_epilogue
+      run: |
+        python3 ${{ github.workspace }}/devtools/ci/ci_epilogue.py > result.log
         cat result.log
+        # CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
+        # echo "::set-output name=CI_conclusion::${CI_conclusion}"
+    # - uses: actions/github-script@v4
+    #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
+    #   with:
+    #     github-token: ${{secrets.WORKFLOW_TOKEN}}
+    #     script: |
+    #       github.repos.createCommitStatus({
+    #           state: '${{ steps.ci_epilogue.outputs.CI_conclusion }}',
+    #           owner: context.repo.owner,
+    #           repo: context.repo.repo,
+    #           context: '${{ github.workflow }}',
+    #           sha: '${{ github.event.pull_request.head.sha }}',
+    #           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    #       })
+
 
   # ci_liners:
   #   name: ci_liners

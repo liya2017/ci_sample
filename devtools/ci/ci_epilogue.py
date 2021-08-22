@@ -10,7 +10,7 @@ from github import Github
 load_dotenv()
 job_runs_info=str(os.getenv('workspace'))+"/job_runs_info.txt"
 job_info=str(os.getenv('workspace'))+"/job_info.txt"
-headers = {"Authorization": "token "+str(sys.argv[2])}
+headers = {"Authorization": "token "+str(os.getenv('TOKEN'))}
 def run_query(url): # A  function to use requests.get to make the API call. Note the json= section.
     request = requests.get(url,headers=headers)
     link = request.headers.get('link', None)
@@ -105,9 +105,7 @@ def check_runs_conculusions(commit_sha):
     elif (Liners_macOS_conclusion == "failure" ) | (Liners_Linux_conclusion == "failure" ):
         Liners_conclusion="failure"
         required_jobs_count +=1
-
     jobs_conclusion=[UnitTest_conclusion,Liners_conclusion]
-
     # check child jobs conclusions if all required jobs completed in one os
     if ( required_jobs_count == 2 ):
         #set ci conclusion
@@ -116,20 +114,23 @@ def check_runs_conculusions(commit_sha):
         else:
             CI_conclusion="success"
     if (CI_conclusion !=""):
+       print("call update_commit_state")
        update_commit_state(CI_conclusion)
     print("Liners_conclusion:"+Liners_conclusion+"\n"+"UnitTest_conclusion:"+UnitTest_conclusion+"\n"+"CI_conclusion:"+CI_conclusion+"\n"+"required_jobs_count:"+str(required_jobs_count)+"\n"+"failure_reson:"+failure_reson)
 def update_commit_state(CI_conclusion):
     g = Github(os.getenv('TOKEN'))
     repo = g.get_repo(os.getenv('REPOSITPRY'))
-    pr = repo.get_pulls()
-    print(pr.get_page(0))
+    print("COMMIT_SHA"+str(os.getenv('COMMIT_SHA')))
+    print("CI_conclusion:"+str(str(CI_conclusion)))
     repo.get_commit(sha=os.getenv('COMMIT_SHA')).create_status(
-        state=CI_conclusion,
+        state=str(CI_conclusion),
         # target_url="https://github.com/liya2017/ci_sample/actions/runs/1149902863",
         # description="",
         context="CI workflow / ci"
     )
+    print("update_commit_state done")
 
 if __name__ == '__main__':
-   check_runs_conculusions(sys.argv[1])
+   print(os.getenv('COMMIT_SHA'))
+   check_runs_conculusions(os.getenv('COMMIT_SHA'))
 
