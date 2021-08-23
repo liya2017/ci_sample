@@ -1,0 +1,28 @@
+name: ci_dispatch
+
+on:
+  repository_dispatch:
+    types: [ ci ]
+  workflow_dispatch:
+    # inputs:
+    #   reason:
+    #     description: 'Reason to pass CI'
+    #     required: true
+    #   conclusion:
+    #     description: 'CI conclusion, allowed values: success or failure'
+    #     required: true
+
+jobs:
+  ci-success:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI succeeded
+        run: exit 0
+
+  
+
+
+       
+    
+

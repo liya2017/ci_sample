@@ -3,38 +3,54 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
   push:
+    branches:
+      - main
+      - develop
+      - trying
+      - staging
+      - 'rc/*'
 
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
   RUSTFLAGS: -D warnings
-
+  COMMIT_MESSAGE: ${{github.event.head_commit.message}}
+  REPO_ACTOR: ${{github.actor}}
+  CI_RUNS_ON: ${{secrets.CI_RUNS_ON}}
+  REPO_OWNER: ${{github.repository_owner}}
+  EVENT_NAME: ${{github.event_name}}
+  REPOSITPRY: ${{ github.repository }}
+  TOKEN: ${{secrets.WORKFLOW_TOKEN}}
+  PR_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  COMMIT_SHA: ${{ github.sha }}
+  workspace: ${{ github.workspace }}
 jobs:
+  prologue:
+    name: prologue
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: set-output
+        id: set-matrix 
+        run: |
+          runs_on=`${{github.workspace}}/devtools/ci/ci_prologue.sh`
+          echo $runs_on
+          echo "::set-output name=matrix::{\"os\":$runs_on}"
   ci_liners:
     name: ci_liners
+    needs: prologue
     runs-on: ${{ matrix.os }}
     strategy:
-      matrix:
-        os: [ubuntu-20.04,macos-10.15]
-      fail-fast: true
-      max-parallel: 10
-    env:
-      ImageOS:  ${{ matrix.os }}
-      BUILD_BUILDID: ${{ github.event.ref }}
-    steps: 
-      - uses: actions/checkout@v2
-      - name: Linters
-        run: |
-          echo "liners test"
-
-  check_runs:
-    if: ${{ always() }}
-    name: check_runs
-    runs-on: ubuntu-20.04
-    needs: ci_liners
-    steps: 
+      matrix: ${{fromJSON(needs.prologue.outputs.matrix)}} 
+    steps:
     - uses: actions/checkout@v2
+    - run: echo  ${{fromJSON(needs.prologue.outputs.matrix)}}
+    - run: |
+        ls ${{github.workspace}}/devtools/ci
+        ${{github.workspace}}/devtools/ci/ci_main.sh
     - name: install python requirements
       uses: actions/setup-python@v2
       with:
@@ -43,10 +59,91 @@ jobs:
         pip install requests
         pip install datetime
         pip install python-dotenv
-    - name: Do check suite 
-      id: check_suit
+        pip install PyGithub
+    - name: ci_epilogue
+      id: ci_epilogue
       run: |
-        python3 ${{ github.workspace }}/devtools/ci/check_runs.py ${{ github.sha }} ${{secrets.WORKFLOW_TOKEN}} > result.log
+        python3 ${{ github.workspace }}/devtools/ci/ci_epilogue.py > result.log
         cat result.log
-    env:
-      workspace: ${{ github.workspace }}
+        echo ${{ toJSON(github.event.client_payload) }}
+        # CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
+        # echo "::set-output name=CI_conclusion::${CI_conclusion}"
+    - name: Trigger ci
+      if: |
+        (contains(github.event_name, 'pull_request') || contains('bors[bot]', github.actor)) && success()
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{secrets.WORKFLOW_TOKEN}}
+        event-type: ci
+        # client-payload: ${{ toJSON(github.event.client_payload) }}
+    # - uses: actions/github-script@v4
+    #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
+    #   with:
+    #     github-token: ${{secrets.WORKFLOW_TOKEN}}
+    #     script: |
+    #       github.repos.createCommitStatus({
+    #           state: '${{ steps.ci_epilogue.outputs.CI_conclusion }}',
+    #           owner: context.repo.owner,
+    #           repo: context.repo.repo,
+    #           context: '${{ github.workflow }}',
+    #           sha: '${{ github.event.pull_request.head.sha }}',
+    #           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    #       })
+
+
+  # ci_liners:
+  #   name: ci_liners
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-20.04,macos-10.15]
+  #     fail-fast: true
+  #     max-parallel: 10
+  #   env:
+  #     ImageOS:  ${{ matrix.os }}
+  #     BUILD_BUILDID: ${{ github.event.ref }}
+  #   steps: 
+  #     - uses: actions/checkout@v2
+  #     - name: Linters
+  #       run: |
+  #         echo "liners test"
+
+  # check_runs:
+  #   if: ${{ always() }}
+  #   name: check_runs
+  #   runs-on: ubuntu-20.04
+  #   needs: ci_liners
+  #   steps: 
+  #   - uses: actions/checkout@v2
+  #   - name: install python requirements
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.8
+  #   - run: |
+  #       pip install requests
+  #       pip install datetime
+  #       pip install python-dotenv
+  #   - name: Do check suite 
+  #     id: check_suit
+  #     run: |
+  #       python3 ${{ github.workspace }}/devtools/ci/check_runs.py ${{ github.sha }} ${{secrets.WORKFLOW_TOKEN}} > result.log
+  #       cat result.log
+  #       CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
+  #       required_jobs_count=`cat result.log | grep "required_jobs_count" | awk -F ':' '{print $2}'`
+  #       echo "====="
+  #       echo $CI_conclusion
+  #       echo "::set-output name=CI_conclusion::${CI_conclusion}"
+  #       echo "::set-output name=required_jobs_count::${required_jobs_count}"
+  #   - name: echo CI_conclusion
+  #     if: |
+  #       (contains(github.event_name, 'pull_request') || contains('bors[bot]', github.actor)) && 
+  #       ${{ steps.check_suit.outputs.CI_conclusion == 'success' }} &&
+  #       ${{ steps.check_suit.outputs.required_jobs_count == '4' }}
+  #     uses: benc-uk/workflow-dispatch@v1
+  #     with:
+  #        workflow: ci_dispatch
+  #        token: ${{ secrets.WORKFLOW_TOKEN }}
+  #        inputs: '{ "ref": ${{ github.ref }} }'
+
+  #   env:
+  #     workspace: ${{ github.workspace }}
