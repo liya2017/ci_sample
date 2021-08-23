@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 set -u
 [ -n "${DEBUG:-}" ] && set -x || true
