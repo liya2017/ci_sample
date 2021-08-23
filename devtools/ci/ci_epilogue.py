@@ -57,7 +57,7 @@ def get_check_runs(commit_sha):
             json.dump(job_data, outfile)
 #function to check job's conculusions
 def check_runs_conculusions(commit_sha):
-    print(commit_sha)
+    print("check_runs_conculusions"+str(commit_sha))
     get_check_runs(commit_sha)
     f = open(job_info,"r") 
     jobs_data= json.load(f)
@@ -115,14 +115,14 @@ def check_runs_conculusions(commit_sha):
             CI_conclusion="success"
     if (CI_conclusion !=""):
        print("call update_commit_state")
-       update_commit_state(CI_conclusion)
+       update_commit_state(CI_conclusion,COMMIT_SHA)
     print("Liners_conclusion:"+Liners_conclusion+"\n"+"UnitTest_conclusion:"+UnitTest_conclusion+"\n"+"CI_conclusion:"+CI_conclusion+"\n"+"required_jobs_count:"+str(required_jobs_count)+"\n"+"failure_reson:"+failure_reson)
-def update_commit_state(CI_conclusion):
+def update_commit_state(CI_conclusion,COMMIT_SHA):
     g = Github(os.getenv('TOKEN'))
     repo = g.get_repo(os.getenv('REPOSITPRY'))
-    print("COMMIT_SHA"+str(os.getenv('COMMIT_SHA')))
-    print("CI_conclusion:"+str(str(CI_conclusion)))
-    repo.get_commit(sha=os.getenv('COMMIT_SHA')).create_status(
+    print("COMMIT_SHA"+str(COMMIT_SHA))
+    print("CI_conclusion:"+str(CI_conclusion))
+    repo.get_commit(sha=COMMIT_SHA).create_status(
         state=str(CI_conclusion),
         # target_url="https://github.com/liya2017/ci_sample/actions/runs/1149902863",
         description="ci",
@@ -131,14 +131,14 @@ def update_commit_state(CI_conclusion):
     print("update_commit_state done")
 
 if __name__ == '__main__':
-   print(os.getenv('COMMIT_SHA'))
+
    COMMIT_SHA=''
    if str(os.getenv('EVENT_NAME')) == "push":
       COMMIT_SHA=str(os.getenv('COMMIT_SHA'))
 
    if str(os.getenv('EVENT_NAME')) == "pull_request":
-      COMMIT_SHA=str(os.getenv('COMMIT_SHA'))
+      COMMIT_SHA=str(os.getenv('PR_COMMIT_SHA'))
 
-   
-   check_runs_conculusions(os.getenv('COMMIT_SHA'))
+      print(COMMIT_SHA)
+   check_runs_conculusions(COMMIT_SHA)
 
