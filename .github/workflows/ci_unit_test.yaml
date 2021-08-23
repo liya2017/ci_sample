@@ -1,53 +1,56 @@
-name: ci_unit_test
+name: ci_unit_tests
 on:
   pull_request:
     types: [ opened, synchronize, reopened ]
   push:
+    branches:
+      - main
+      - develop
+      - trying
+      - staging
+      - 'rc/*'
+
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
   RUSTFLAGS: -D warnings
-
+  COMMIT_MESSAGE: ${{github.event.head_commit.message}}
+  REPO_ACTOR: ${{github.actor}}
+  CI_RUNS_ON: ${{secrets.CI_RUNS_ON}}
+  REPO_OWNER: ${{github.repository_owner}}
+  EVENT_NAME: ${{github.event_name}}
+  REPOSITPRY: ${{ github.repository }}
+  TOKEN: ${{secrets.WORKFLOW_TOKEN}}
+  PR_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  COMMIT_SHA: ${{ github.sha }}
+  workspace: ${{ github.workspace }}
 jobs:
+  prologue:
+    name: prologue
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: set-output
+        id: set-matrix 
+        run: |
+          runs_on=`${{github.workspace}}/devtools/ci/ci_prologue.sh`
+          echo $runs_on
+          echo "::set-output name=matrix::{\"os\":$runs_on}"
   ci_unit_tests:
     name: ci_unit_tests
+    needs: prologue
     runs-on: ${{ matrix.os }}
     strategy:
-      matrix:
-        os: [ubuntu-20.04,windows-2019,macos-10.15]
-      fail-fast: true
-      max-parallel: 10
-    steps: 
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.ref }}
-      - if: ${{ runner.os == 'Windows' && steps.restore-scoop.outputs.cache-hit != 'true' }}
-        run: iex (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-      - if: ${{ runner.os == 'Windows' }}
-        run: |
-          echo "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "${{ github.workspace }}\devtools\windows" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - if: ${{ runner.os == 'Windows' }}
-        run: |
-          scoop install git
-          scoop bucket add extras
-          scoop install llvm yasm
-      - name: unit test
-        run: |
-          echo "unit test"
-          exit 1
-    env:
-      ImageOS:  ${{ matrix.os }}
-      BUILD_BUILDID: ${{ github.event.ref }}
-
-  check_runs:
-    if: ${{ always() }}
-    name: check_runs
-    runs-on: ubuntu-20.04
-    needs: ci_unit_tests
+      matrix: ${{fromJSON(needs.prologue.outputs.matrix)}} 
     steps:
     - uses: actions/checkout@v2
+    - run: echo  ${{fromJSON(needs.prologue.outputs.matrix)}}
+    - run: |
+        ls ${{github.workspace}}/devtools/ci
+        ${{github.workspace}}/devtools/ci/ci_main.sh
     - name: install python requirements
       uses: actions/setup-python@v2
       with:
@@ -56,13 +59,35 @@ jobs:
         pip install requests
         pip install datetime
         pip install python-dotenv
-    - name: Do check suite 
-      id: check_suit
+        pip install PyGithub
+    - name: ci_epilogue
+      id: ci_epilogue
       run: |
-        python3 ${{ github.workspace }}/devtools/ci/check_runs.py ${{ github.sha }} ${{secrets.WORKFLOW_TOKEN}} > result.log
+        python3 ${{ github.workspace }}/devtools/ci/ci_epilogue.py > result.log
         cat result.log
-    env:
-      workspace: ${{ github.workspace }}
+        echo ${{ toJSON(github.event.client_payload) }}
+        # CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
+        # echo "::set-output name=CI_conclusion::${CI_conclusion}"
+    - name: Trigger Next Checks
+      if: ${{ github.event.client_payload.env.trigger_next_checks }}
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{secrets.WORKFLOW_TOKEN}}
+        event-type: ci
+        client-payload: ${{ toJSON(github.event.client_payload) }}
+    # - uses: actions/github-script@v4
+    #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
+    #   with:
+    #     github-token: ${{secrets.WORKFLOW_TOKEN}}
+    #     script: |
+    #       github.repos.createCommitStatus({
+    #           state: '${{ steps.ci_epilogue.outputs.CI_conclusion }}',
+    #           owner: context.repo.owner,
+    #           repo: context.repo.repo,
+    #           context: '${{ github.workflow }}',
+    #           sha: '${{ github.event.pull_request.head.sha }}',
+    #           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    #       })
 
         
 

@@ -6,10 +6,11 @@ import datetime
 import os
 import sys
 from dotenv import load_dotenv
+from github import Github
 load_dotenv()
 job_runs_info=str(os.getenv('workspace'))+"/job_runs_info.txt"
 job_info=str(os.getenv('workspace'))+"/job_info.txt"
-headers = {"Authorization": "token "+str(sys.argv[2])}
+headers = {"Authorization": "token "+str(os.getenv('TOKEN'))}
 def run_query(url): # A  function to use requests.get to make the API call. Note the json= section.
     request = requests.get(url,headers=headers)
     link = request.headers.get('link', None)
@@ -60,6 +61,9 @@ def check_runs_conculusions(commit_sha):
     get_check_runs(commit_sha)
     f = open(job_info,"r") 
     jobs_data= json.load(f)
+    print("jobs_data")
+    print(jobs_data)
+    print("jobs_data done")
     CI_conclusion=""
     required_jobs_count=0
     failure_reson=""
@@ -94,7 +98,6 @@ def check_runs_conculusions(commit_sha):
     elif (UnitTest_macOS_conclusion == "failure" ) | (UnitTest_Linux_conclusion == "failure" ) | (UnitTest_Windows_conclusion == "failure" ):
         UnitTest_conclusion="failure"
         required_jobs_count +=1
-        failure_reson +="UnitTest failure"
 
     if (Liners_macOS_conclusion == "success" ) | (Liners_Linux_conclusion == "success" ):
         Liners_conclusion="success"
@@ -102,10 +105,7 @@ def check_runs_conculusions(commit_sha):
     elif (Liners_macOS_conclusion == "failure" ) | (Liners_Linux_conclusion == "failure" ):
         Liners_conclusion="failure"
         required_jobs_count +=1
-        failure_reson +="Liners failure"
-
     jobs_conclusion=[UnitTest_conclusion,Liners_conclusion]
-
     # check child jobs conclusions if all required jobs completed in one os
     if ( required_jobs_count == 2 ):
         #set ci conclusion
@@ -113,25 +113,32 @@ def check_runs_conculusions(commit_sha):
             CI_conclusion="failure"
         else:
             CI_conclusion="success"
-
+    # if (CI_conclusion !=""):
+    #    print("call update_commit_state")
+    #    update_commit_state(CI_conclusion)
     print("Liners_conclusion:"+Liners_conclusion+"\n"+"UnitTest_conclusion:"+UnitTest_conclusion+"\n"+"CI_conclusion:"+CI_conclusion+"\n"+"required_jobs_count:"+str(required_jobs_count)+"\n"+"failure_reson:"+failure_reson)
-    
-    # # trigger ci workflow if all required_jobs run & CI_conclusion is not null
-    # if ( required_jobs_count == 2 ) & ( CI_conclusion != '' ):
-    #    call_ci(required_jobs_count,CI_conclusion,commit_sha)
-# function to trigger ci workflow
-def call_ci(required_jobs_count,CI_conclusion,commit_sha):
-    print(required_jobs_count)
-    print(CI_conclusion)
-    data='{"ref":"main","input":{"resaon":'+str(required_jobs_count)+',"conclusion":'+CI_conclusion+'}}'
-    print(data)
-    request = requests.post('https://api.github.com/repos/liya2017/ci_sample/actions/workflows/ci_dispatch.yaml/dispatches', headers=headers,data=data)
-    print(request.status_code)
-    # if request.status_code == 200:
-    #     return request.json()
-    # else:
-    #     raise Exception("Query failure to run by returning code of {}. {}".format(request.status_code))
-if __name__ == '__main__':
-   check_runs_conculusions(sys.argv[1])
+def update_commit_state(CI_conclusion):
+    g = Github(os.getenv('TOKEN'))
+    repo = g.get_repo(os.getenv('REPOSITPRY'))
+    print("COMMIT_SHA"+str(os.getenv('COMMIT_SHA')))
+    print("CI_conclusion:"+str(str(CI_conclusion)))
+    repo.get_commit(sha=os.getenv('COMMIT_SHA')).create_status(
+        state=str(CI_conclusion),
+        # target_url="https://github.com/liya2017/ci_sample/actions/runs/1149902863",
+        description="ci",
+        context="ci"
+    )
+    print("update_commit_state done")
 
+if __name__ == '__main__':
+   print(os.getenv('COMMIT_SHA'))
+   COMMIT_SHA=''
+   if str(os.getenv('EVENT_NAME')) == "push":
+      COMMIT_SHA=str(os.getenv('COMMIT_SHA'))
+
+   if str(os.getenv('EVENT_NAME')) == "pull_request":
+      COMMIT_SHA=str(os.getenv('COMMIT_SHA'))
+
+   
+   check_runs_conculusions(os.getenv('COMMIT_SHA'))
 
