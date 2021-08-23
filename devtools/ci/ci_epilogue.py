@@ -113,9 +113,9 @@ def check_runs_conculusions(commit_sha):
             CI_conclusion="failure"
         else:
             CI_conclusion="success"
-    # if (CI_conclusion !=""):
-    #    print("call update_commit_state")
-    #    update_commit_state(CI_conclusion)
+    if (CI_conclusion !=""):
+       print("call update_commit_state")
+       update_commit_state(CI_conclusion)
     print("Liners_conclusion:"+Liners_conclusion+"\n"+"UnitTest_conclusion:"+UnitTest_conclusion+"\n"+"CI_conclusion:"+CI_conclusion+"\n"+"required_jobs_count:"+str(required_jobs_count)+"\n"+"failure_reson:"+failure_reson)
 def update_commit_state(CI_conclusion):
     g = Github(os.getenv('TOKEN'))

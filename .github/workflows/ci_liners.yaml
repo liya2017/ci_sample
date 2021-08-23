@@ -68,14 +68,14 @@ jobs:
         echo ${{ toJSON(github.event.client_payload) }}
         # CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
         # echo "::set-output name=CI_conclusion::${CI_conclusion}"
-    - name: Trigger ci
-      if: |
-        (contains(github.event_name, 'pull_request') || contains('bors[bot]', github.actor)) && success()
-      uses: peter-evans/repository-dispatch@v1
-      with:
-        token: ${{secrets.WORKFLOW_TOKEN}}
-        event-type: ci
-        client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+    # - name: Trigger ci
+    #   if: |
+    #     (contains(github.event_name, 'pull_request') || contains('bors[bot]', github.actor)) && success()
+    #   uses: peter-evans/repository-dispatch@v1
+    #   with:
+    #     token: ${{secrets.WORKFLOW_TOKEN}}
+    #     event-type: ci
+    #     client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
     # - uses: actions/github-script@v4
     #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
     #   with:
