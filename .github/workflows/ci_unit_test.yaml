@@ -74,7 +74,7 @@ jobs:
       with:
         token: ${{secrets.WORKFLOW_TOKEN}}
         event-type: ci
-        # client-payload: ${{ toJSON(github.event.client_payload) }}
+        client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
     # - uses: actions/github-script@v4
     #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
     #   with:
