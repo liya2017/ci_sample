@@ -56,7 +56,7 @@ def get_check_runs(commit_sha):
     with open(job_info, 'w') as outfile:
             json.dump(job_data, outfile)
 #function to check job's conculusions
-def check_runs_conculusions(commit_sha):
+def check_runs_conculusions(commit_sha,expect_job_num,expect_jobs):
     print("check_runs_conculusions"+str(commit_sha))
     get_check_runs(commit_sha)
     f = open(job_info,"r") 
@@ -65,7 +65,7 @@ def check_runs_conculusions(commit_sha):
     print(jobs_data)
     print("jobs_data done")
     CI_conclusion=""
-    required_jobs_count=0
+    excuted_jobs_count=0
     failure_reson=""
 
     UnitTest_macOS_conclusion=""
@@ -75,39 +75,50 @@ def check_runs_conculusions(commit_sha):
     Liners_Linux_conclusion=""
 
     UnitTest_conclusion=""
+    is_UnitTest_run=False
     Liners_conclusion=""
-
-
+    is_Liners_run=False
+    
     for i in range(len(jobs_data["job_details"])):
         #Unit test conclusion
-        if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (ubuntu") != -1:
-            UnitTest_Linux_conclusion=jobs_data["job_details"][i]["job_conclusion"]
-        if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (macos") != -1:
-            UnitTest_macOS_conclusion=jobs_data["job_details"][i]["job_conclusion"]
-        if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (windows") != -1:
-            UnitTest_Windows_conclusion=jobs_data["job_details"][i]["job_conclusion"]
-        #liners test conclusion
-        if (jobs_data["job_details"][i]["job_name"]).find("ci_liners (ubuntu") != -1:
-            Liners_Linux_conclusion=jobs_data["job_details"][i]["job_conclusion"]
-        if (jobs_data["job_details"][i]["job_name"]).find("ci_liners (macos") != -1:
-            Liners_macOS_conclusion=jobs_data["job_details"][i]["job_conclusion"]
-
-    if (UnitTest_macOS_conclusion == "success" ) | (UnitTest_Linux_conclusion == "success" ) | (UnitTest_Windows_conclusion == "success" ):
-        UnitTest_conclusion="success"
-        required_jobs_count +=1
-    elif (UnitTest_macOS_conclusion == "failure" ) | (UnitTest_Linux_conclusion == "failure" ) | (UnitTest_Windows_conclusion == "failure" ):
-        UnitTest_conclusion="failure"
-        required_jobs_count +=1
-
-    if (Liners_macOS_conclusion == "success" ) | (Liners_Linux_conclusion == "success" ):
-        Liners_conclusion="success"
-        required_jobs_count +=1
-    elif (Liners_macOS_conclusion == "failure" ) | (Liners_Linux_conclusion == "failure" ):
-        Liners_conclusion="failure"
-        required_jobs_count +=1
+        for j in range(len(expect_jobs)):
+            job_name=str(expect_jobs[j])
+            if job_name.find("unit"):
+                print("name is"+str(job_name))
+                is_UnitTest_run=True
+                if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (ubuntu") != -1:
+                    UnitTest_Linux_conclusion=jobs_data["job_details"][i]["job_conclusion"]
+                if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (macos") != -1:
+                    UnitTest_macOS_conclusion=jobs_data["job_details"][i]["job_conclusion"]
+                if (jobs_data["job_details"][i]["job_name"]).find("ci_unit_tests (windows") != -1:
+                    UnitTest_Windows_conclusion=jobs_data["job_details"][i]["job_conclusion"]
+            #liners test conclusion
+            if job_name.find("liners"):
+                print("name is"+str(job_name))
+                is_Liners_run=True
+                if (jobs_data["job_details"][i]["job_name"]).find("ci_liners (ubuntu") != -1:
+                    Liners_Linux_conclusion=jobs_data["job_details"][i]["job_conclusion"]
+                if (jobs_data["job_details"][i]["job_name"]).find("ci_liners (macos") != -1:
+                    Liners_macOS_conclusion=jobs_data["job_details"][i]["job_conclusion"]
+    if ( is_UnitTest_run == True):
+        if (UnitTest_macOS_conclusion == "success" ) | (UnitTest_Linux_conclusion == "success" ) | (UnitTest_Windows_conclusion == "success" ):
+            UnitTest_conclusion="success"
+            excuted_jobs_count +=1
+        elif (UnitTest_macOS_conclusion == "failure" ) | (UnitTest_Linux_conclusion == "failure" ) | (UnitTest_Windows_conclusion == "failure" ):
+            UnitTest_conclusion="failure"
+            excuted_jobs_count +=1
+    if ( is_Liners_run == True):
+        if (Liners_macOS_conclusion == "success" ) | (Liners_Linux_conclusion == "success" ):
+            Liners_conclusion="success"
+            excuted_jobs_count +=1
+        elif (Liners_macOS_conclusion == "failure" ) | (Liners_Linux_conclusion == "failure" ):
+            Liners_conclusion="failure"
+            excuted_jobs_count +=1
     jobs_conclusion=[UnitTest_conclusion,Liners_conclusion]
     # check child jobs conclusions if all required jobs completed in one os
-    if ( required_jobs_count == 2 ):
+    print("excuted_jobs_count is"+str(excuted_jobs_count))
+    print("expect_job_num is"+str(expect_job_num))
+    if ( excuted_jobs_count == expect_job_num ):
         #set ci conclusion
         if  "failure" in jobs_conclusion:
             CI_conclusion="failure"
@@ -132,10 +143,24 @@ def update_commit_state(CI_conclusion,COMMIT_SHA):
 if __name__ == '__main__':
 
    COMMIT_SHA=''
+   MESSAGE=''
+   REPO_LIST=['liya2017']
    if str(os.getenv('EVENT_NAME')) == "push":
       COMMIT_SHA=str(os.getenv('COMMIT_SHA'))
+      MESSAGE=str(os.getenv('COMMIT_MESSAGE'))
 
    if str(os.getenv('EVENT_NAME')) == "pull_request":
       COMMIT_SHA=str(os.getenv('PR_COMMIT_SHA'))
-   check_runs_conculusions(COMMIT_SHA)
+      MESSAGE=str(os.getenv('PR_COMMONS_BODY'))
+   print("MESSAGE is :"+str(MESSAGE))
+   print("COMMIT_SHA is :"+str(COMMIT_SHA))
+
+   if ( "ci:" in MESSAGE ) & ( ( os.getenv('EVENT_NAME') == "push" ) | ( ( os.getenv('REPO_OWNER') == "liya2017" ) & ( os.getenv('EVENT_NAME') == "pull_request" ) & ( os.getenv('REPO_ACTOR') in REPO_LIST ) ) ):
+        print("ci test message")
+        required_job=MESSAGE.split("ci:[")[1].split("]")[0].split(',')
+        # required_jobs=eval(required_job)
+        print(required_job)
+        check_runs_conculusions(COMMIT_SHA,len(required_job),required_job)
+   else :
+       check_runs_conculusions(COMMIT_SHA,7)
 
