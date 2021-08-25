@@ -65,29 +65,3 @@ jobs:
       run: |
         python3 ${{ github.workspace }}/devtools/ci/ci_epilogue.py > result.log
         cat result.log
-        echo ${{ toJSON(github.event.client_payload) }}
-        # CI_conclusion=`cat result.log | grep "CI_conclusion" | awk -F ':' '{print $2}'`
-        # echo "::set-output name=CI_conclusion::${CI_conclusion}"
-    # - name: Trigger Next Checks
-    #   if: ${{ github.event.client_payload.env.trigger_next_checks }}
-    #   uses: peter-evans/repository-dispatch@v1
-    #   with:
-    #     token: ${{secrets.WORKFLOW_TOKEN}}
-    #     event-type: ci
-    #     client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.event.pull_request.head.sha }}"}'
-    # - uses: actions/github-script@v4
-    #   if: ${{ steps.ci_epilogue.outputs.CI_conclusion != '' }}
-    #   with:
-    #     github-token: ${{secrets.WORKFLOW_TOKEN}}
-    #     script: |
-    #       github.repos.createCommitStatus({
-    #           state: '${{ steps.ci_epilogue.outputs.CI_conclusion }}',
-    #           owner: context.repo.owner,
-    #           repo: context.repo.repo,
-    #           context: '${{ github.workflow }}',
-    #           sha: '${{ github.event.pull_request.head.sha }}',
-    #           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-    #       })
-
-        
-
