@@ -51,7 +51,6 @@ jobs:
     - run: |
         ls ${{github.workspace}}/devtools/ci
         ${{github.workspace}}/devtools/ci/ci_main.sh
-        exit 1
     - name: install python requirements
       uses: actions/setup-python@v2
       with:
