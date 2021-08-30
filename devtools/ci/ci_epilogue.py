@@ -35,6 +35,7 @@ def get_check_suite(commit_sha):
             json.dump(data, outfile)
 
 # function to get each job info from each checkruns     
+
 def get_check_runs(commit_sha):
     get_check_suite(commit_sha)
     f = open(job_runs_info,"r") 
