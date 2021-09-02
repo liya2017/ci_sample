@@ -1,13 +1,47 @@
-name: ci_alert
+name: ci_test
 on:
-  workflow_run:
-    workflows: ["ci_unit_tests","ci_linters"]
-    branches: [main]
-    types: 
-      - completed
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+  RUSTFLAGS: -D warnings
+  COMMIT_MESSAGE: ${{github.event.head_commit.message}}
+  REPO_ACTOR: ${{github.actor}}
+  CI_RUNS_ON: ${{secrets.CI_RUNS_ON}}
+  REPO_OWNER: ${{github.repository_owner}}
+  EVENT_NAME: ${{github.event_name}}
+  REPOSITPRY: ${{ github.repository }}
+  TOKEN: ${{secrets.WORKFLOW_TOKEN}}
+  PR_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  COMMIT_SHA: ${{ github.sha }}
+  workspace: ${{ github.workspace }}
+  GITHUB_TOKEN: ${{secrets.WORKFLOW_TOKEN}}
 jobs:
-  on-failure:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+  ci_liners:
+    name: ci_test
+    runs-on: ${{ matrix.os }} 
+    strategy:
+      matrix:
+        os: [ubuntu-20.04,windows-2019,macos-latest]
     steps:
-      - run: echo "failure"
+    - uses: actions/checkout@v2
+    - run: |
+        export OS_NAME=${{runner.os}}
+        echo "test message"
+        echo "${{ github.event.head_commit.message }}"
+        echo "test label"
+        # echo "${{ toJson(github.event.pull_request.labels.*.name) }}" 
+        lables='${{ toJson(github.event.pull_request.labels.*.name) }}'
+        echo $lables
+        # for label in $lables;
+        # do
+        #   echo $label
+        # done
+        echo "test pull_request.body"
+        echo "${{ github.event.pull_request.body }}"
+        echo "test gh"
+        gh api https://api.github.com/repos/${{ github.repository }}/collaborators/${{github.actor}}/permission --jq .permission
+      shell: bash
