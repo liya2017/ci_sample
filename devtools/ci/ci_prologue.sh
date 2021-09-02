@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set +e
+
 if [ $EVENT_NAME == "push" ];then
    COMMIT_SHA=$COMMIT_SHA
    MESSAGE="$COMMIT_MESSAGE"
@@ -16,7 +17,7 @@ if [ $EVENT_NAME == "pull_request" ];then
     MESSAGE="$PR_COMMONS_BODY"
 fi
 
-
+echo $MESSAGE | grep -q "runs_on:"
 
 if [ $? -eq 0 ]; then
     runs_on=` echo "${MESSAGE}"| grep "runs_on" | awk -F 'runs-on' '{print $1}' | awk -F ':' '{print $2}'`
