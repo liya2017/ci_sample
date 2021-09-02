@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 set -u
-[ -n "${DEBUG:-}" ] && set -x || true
-
-set +e
-"$@"
+case $GITHUB_WORKFLOW in
+	ci_linters*)
+		echo "Hellow ci_linters!"
+		;;
+	ci_unit_test*)
+		echo "See you unit_test!"
+		;;
+	*)
+		echo -n "unknown"
+		;;
+esac
 EXIT_STATUS="$?"
-set -e
-
-if [ "$EXIT_STATUS" = 0 ]; then
-    echo "Check whether the ci succeeds"
-else
-    echo "Fail the ci"
-fi
 exit $EXIT_STATUS
