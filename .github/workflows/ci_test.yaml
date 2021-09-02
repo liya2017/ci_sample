@@ -33,12 +33,13 @@ jobs:
         echo "test message"
         echo "${{ github.event.head_commit.message }}"
         echo "test label"
-        echo "${{ toJson(github.event.pull_request.labels.*.name) }}" 
-        lables=${{ toJson(github.event.pull_request.labels.*.name) }}
-        for label in lables;
-        do
-          echo $label
-        done
+        # echo "${{ toJson(github.event.pull_request.labels.*.name) }}" 
+        lables='${{ toJson(github.event.pull_request.labels.*.name) }}'
+        echo $lables
+        # for label in $lables;
+        # do
+        #   echo $label
+        # done
         echo "test pull_request.body"
         echo "${{ github.event.pull_request.body }}"
         echo "test gh"
