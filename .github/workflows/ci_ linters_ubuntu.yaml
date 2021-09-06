@@ -34,8 +34,8 @@ jobs:
         echo ${{ steps.prologue.outputs.job_skip }}
         echo ${{ steps.prologue.outputs.runner_label }}
       shell: bash
-  ci_liners_use_github:
-    name: ci_liners
+  ci_linters_ubuntu:
+    name: ci_linters_ubuntu
     needs: prologue
     runs-on: ${{ needs.prologue.outputs.runner_label }}
     if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run'

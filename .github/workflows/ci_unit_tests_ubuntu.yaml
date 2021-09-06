@@ -2,6 +2,13 @@ name: ci_unit_tests_ubuntu
 on:
   pull_request:
     types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - main
+      - develop
+      - trying
+      - staging
+      - 'rc/*'
 jobs:
   prologue:
     name: prologue
@@ -28,7 +35,8 @@ jobs:
         echo ${{ steps.prologue.outputs.runner_label }}
       shell: bash
 
-  ci_test:
+  ci_unit_tests_ubuntu:
+    name: ci_unit_tests_ubuntu
     needs: prologue
     runs-on: ${{ needs.prologue.outputs.runner_label }}
     if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run' 

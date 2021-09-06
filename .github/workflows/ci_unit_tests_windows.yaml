@@ -2,6 +2,13 @@ name: ci_unit_tests_windows
 on:
   pull_request:
     types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - main
+      - develop
+      - trying
+      - staging
+      - 'rc/*'
 jobs:
   prologue:
     name: prologue
@@ -28,8 +35,8 @@ jobs:
         echo ${{ steps.prologue.outputs.runner_label }}
       shell: bash
 
-  ci_test:
-    name: ci_test
+  ci_unit_tests_windows:
+    name: ci_unit_tests_windows
     needs: prologue
     runs-on: windows-2019
     if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run'

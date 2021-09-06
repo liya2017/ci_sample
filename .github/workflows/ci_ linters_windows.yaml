@@ -34,8 +34,8 @@ jobs:
         echo ${{ steps.prologue.outputs.job_skip }}
         echo ${{ steps.prologue.outputs.runner_label }}
       shell: bash
-  ci_liners:
-    name: ci_liners
+  ci_linters_windows:
+    name: ci_linters_windows
     needs: prologue
     runs-on: windows-2019
     if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run' 
