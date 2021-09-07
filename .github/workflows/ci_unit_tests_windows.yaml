@@ -43,10 +43,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: |
-        echo ${{ needs.prologue.outputs.os_skip }}
-        echo ${{ needs.prologue.outputs.job_skip }}
-        echo ${{ needs.prologue.outputs.runner_label }}
-        devtools/ci/ci_main.sh
+       if [[ ${{ needs.prologue.outputs.os_skip }} == 'run' && [[ ${{ needs.prologue.outputs.job_skip }} == 'run' ]];then
+          echo ${{ needs.prologue.outputs.os_skip }}
+          echo ${{ needs.prologue.outputs.job_skip }}
+          echo ${{ needs.prologue.outputs.runner_label }}
+          devtools/ci/ci_main.sh
+       else
+          exit 0
+       fi
       shell: bash
 
 
