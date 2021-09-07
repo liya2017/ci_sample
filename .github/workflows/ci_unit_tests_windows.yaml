@@ -39,11 +39,11 @@ jobs:
     name: ci_unit_tests_windows
     needs: prologue
     runs-on: windows-2019
-    if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run'
+    # if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run'
     steps:
     - uses: actions/checkout@v2
     - run: |
-       if [[ ${{ needs.prologue.outputs.os_skip }} == 'run' && [[ ${{ needs.prologue.outputs.job_skip }} == 'run' ]];then
+       if [[ ${{ needs.prologue.outputs.os_skip }} == run ]] && [[ ${{ needs.prologue.outputs.job_skip }} == run ]];then
           echo ${{ needs.prologue.outputs.os_skip }}
           echo ${{ needs.prologue.outputs.job_skip }}
           echo ${{ needs.prologue.outputs.runner_label }}
