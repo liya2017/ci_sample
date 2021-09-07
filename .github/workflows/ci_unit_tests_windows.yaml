@@ -49,6 +49,7 @@ jobs:
           echo ${{ needs.prologue.outputs.runner_label }}
           devtools/ci/ci_main.sh
        else
+          echo "skip job"
           exit 0
        fi
       shell: bash

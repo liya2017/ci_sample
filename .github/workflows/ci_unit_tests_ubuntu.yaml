@@ -39,7 +39,7 @@ jobs:
     name: ci_unit_tests_ubuntu
     needs: prologue
     runs-on: ${{ needs.prologue.outputs.runner_label }}
-    if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run' 
+    # if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run' 
     steps:
     - uses: actions/checkout@v2
     - run: |
@@ -49,6 +49,7 @@ jobs:
           echo ${{ needs.prologue.outputs.runner_label }}
           devtools/ci/ci_main.sh
        else
+          echo "skip job"
           exit 0
        fi
       shell: bash
