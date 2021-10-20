@@ -139,4 +139,3 @@ if __name__ == '__main__':
       COMMIT_SHA=str(os.getenv('PR_COMMIT_SHA'))
    check_runs_conculusions(COMMIT_SHA)
 
-
