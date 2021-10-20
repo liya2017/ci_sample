@@ -22,4 +22,3 @@ echo "$PR_COMMONS_BODY" | grep -q "Need to cherry-pick to the release branch"
 
 
 
-
