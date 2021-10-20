@@ -99,7 +99,3 @@ if [[ $GITHUB_EVENT_NAME == "pull_request" ]];then
         echo "::set-output name=runner_label::ubuntu-latest"
     fi
 fi
-
-
-
-
