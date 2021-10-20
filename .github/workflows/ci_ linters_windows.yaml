@@ -56,20 +56,3 @@ jobs:
     env:
       RUNNER_LABEL: self-hosted-ci-ubuntu-20.04
 
-    # - name: install python requirements
-    #   uses: actions/setup-python@v2
-    #   with:
-    #     python-version: 3.8
-    # - run: |
-    #     pip install requests
-    #     pip install datetime
-    #     pip install python-dotenv
-    #     pip install PyGithub
-    # - name: ci_epilogue
-    #   id: ci_epilogue
-    #   uses: liya2017/composite-action@v1
-    #   with:
-    #       who-to-greet: 'Mona the Octocat'
-    # - run: |
-    #     python3 ${{ github.workspace }}/devtools/ci/ci_epilogue.py > result.log
-    #     cat result.log
