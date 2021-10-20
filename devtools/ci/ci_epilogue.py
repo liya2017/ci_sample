@@ -113,10 +113,9 @@ def check_runs_conculusions(commit_sha):
             CI_conclusion="failure"
         else:
             CI_conclusion="success"
-    # if (CI_conclusion !=""):
-    #    print("call update_commit_state")
-    #    update_commit_state(CI_conclusion,COMMIT_SHA)
-    print("Liners_conclusion:"+Liners_conclusion+"\n"+"UnitTest_conclusion:"+UnitTest_conclusion+"\n"+"CI_conclusion:"+CI_conclusion+"\n"+"required_jobs_count:"+str(required_jobs_count)+"\n"+"failure_reson:"+failure_reson)
+    if (CI_conclusion !=""):
+       print("call update_commit_state")
+       update_commit_state(CI_conclusion,COMMIT_SHA)
 def update_commit_state(CI_conclusion,COMMIT_SHA):
     g = Github(os.getenv('TOKEN'))
     repo = g.get_repo(os.getenv('REPOSITPRY'))
@@ -138,7 +137,5 @@ if __name__ == '__main__':
 
    if str(os.getenv('EVENT_NAME')) == "pull_request":
       COMMIT_SHA=str(os.getenv('PR_COMMIT_SHA'))
-
-      print(COMMIT_SHA)
    check_runs_conculusions(COMMIT_SHA)
 

@@ -1,0 +1,58 @@
+name: ci_unit_tests_ubuntu
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - main
+      - develop
+      - trying
+      - staging
+      - 'rc/*'
+jobs:
+  prologue:
+    name: prologue
+    runs-on: ubuntu-20.04
+    outputs:
+      os_skip: ${{ steps.prologue.outputs.os_skip }}
+      job_skip: ${{ steps.prologue.outputs.job_skip }}
+      runner_label: ${{ steps.prologue.outputs.runner_label }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: prologue
+      id: prologue
+      uses: ./.github/actions/ci_prologue
+      with:
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        COMMIT_MESSAGE: "${{github.event.head_commit.message}}"
+        PR_COMMONS_BODY: "${{ github.event.pull_request.body }}"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        LABELS: "${{ toJson(github.event.pull_request.labels.*.name) }}"
+        GITHUB_REPOSITORY: ${{ github.repositoty }}
+        GITHUB_WORKFLOW: ${{ github.workflow }}
+        GITHUB_ACTOR: ${{ github.actor }}
+    - run: |
+        echo ${{ steps.prologue.outputs.os_skip }}
+        echo ${{ steps.prologue.outputs.job_skip }}
+        echo ${{ steps.prologue.outputs.runner_label }}
+      shell: bash
+
+  ci_unit_tests_ubuntu:
+    name: ci_unit_tests_ubuntu
+    needs: prologue
+    runs-on: ${{ needs.prologue.outputs.runner_label }}
+    if: needs.prologue.outputs.os_skip == 'run' && needs.prologue.outputs.job_skip == 'run' 
+    steps:
+    - uses: actions/checkout@v2
+    - run: |
+        echo ${{ needs.prologue.outputs.os_skip }}
+        echo ${{ needs.prologue.outputs.job_skip }}
+        echo ${{ needs.prologue.outputs.runner_label }}
+        devtools/ci/ci_main.sh
+      shell: bash
+    env:
+      RUNNER_LABEL: self-hosted-ci-ubuntu-20.04
+
+
+
+
