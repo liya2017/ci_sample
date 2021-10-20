@@ -52,7 +52,7 @@ jobs:
         echo ${{ needs.prologue.outputs.job_skip }}
         echo ${{ needs.prologue.outputs.runner_label }}
         devtools/ci/ci_main.sh
-        
+        sleep 960
       shell: bash
     env:
       RUNNER_LABEL: ${{ needs.prologue.outputs.runner_label }}
