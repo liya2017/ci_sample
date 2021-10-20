@@ -1,4 +1,7 @@
 name: ci_linters_windows
+concurrency:
+  group: ci_linters_windows-${{ github.ref }}
+  cancel-in-progress: true
 on:
   pull_request:
     types: [ opened, synchronize, reopened ]
